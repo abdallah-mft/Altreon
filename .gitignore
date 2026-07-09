@@ -1,0 +1,44 @@
+# Environment
+.env
+backend/.env
+
+# Database files
+*.db
+*.sqlite
+backend/*.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+backend/app/__pycache__/
+
+# Virtual environment
+venv/
+backend/venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Archives
+*.rar
+*.zip
+*.tar.gz
+
+# Virtual environment
+venv/
+.venv/
+backend/venv/
+
+# Secrets
+**/*.pem
+**/*.key
