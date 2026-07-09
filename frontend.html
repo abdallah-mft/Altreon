@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALTREON - Rapid Cyber Triage & SOAR Platform</title>
+<meta name="description" content="ALTREON is an AI-powered cybersecurity triage and SOAR platform that bridges the gap between employees and IT admins.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Antic&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.cdnfonts.com/css/glacial-indifference');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --sage:#7E9E5D;
+  --moss:#6E8B4E;
+  --navy:#363054;
+  --mint:#E8ECE2;
+  --grid:#C8CEC2;
+  --charcoal:#2E2E2E;
+  --white:#FFFFFF;
+  --font-sans:'Sora', sans-serif;
+  --font-body:'Inter', sans-serif;
+  --font-logo:'Outfit', sans-serif;
+  --font-glacial:'Glacial Indifference', 'Jost', sans-serif;
+  --font-antic:'Antic', serif;
+  --ease:cubic-bezier(.16,.84,.44,1);
+}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-body);
+  color:var(--charcoal);
+  overflow-x:hidden;
+  line-height:1.7;
+}
+img{max-width:100%;display:block;}
+a{text-decoration:none;color:inherit;}
+ul{list-style:none;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+.container{width:min(1180px, 92%);margin:0 auto;}
+section{padding:100px 0;}
+.section-head{max-width:620px;margin:0 auto 56px;text-align:center;}
+.section-head h2{font-family:var(--font-sans);font-size:clamp(1.5rem,2.8vw,2.3rem);margin-bottom:14px;color:var(--charcoal);letter-spacing:-.01em;line-height:1.2;}
+.section-head p{font-size:.98rem;color:#5a5a54;line-height:1.7;}
+
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .4s var(--ease), transform .4s var(--ease);}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-delay-1.visible{transition-delay:.06s;}
+.reveal-delay-2.visible{transition-delay:.12s;}
+.reveal-delay-3.visible{transition-delay:.18s;}
+.msg-hidden{opacity:0;transform:translateY(6px);}
+.msg-hidden.visible{opacity:1;transform:translateY(0);transition:opacity .3s var(--ease), transform .3s var(--ease);}
+.step-card.reveal{transform:translateY(30px) translateX(-50px);}
+.step-card.reveal.reveal-delay-1{transform:translateY(30px) translateX(-80px);}
+.step-card.reveal.reveal-delay-2{transform:translateY(30px) translateX(-120px);}
+.step-card.reveal.visible{opacity:1;transform:translateY(0) translateX(0);}
+
+
+/* ============ NAVBAR ============ */
+.navbar{
+  position:fixed;top:16px;left:50%;z-index:1000;
+  transform:translateX(-50%);
+  width:min(1120px,92%);
+  padding:10px 28px;
+  background:rgba(232,236,226,0.1);
+  backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  border:1px solid rgba(200,206,194,0.35);
+  border-radius:15px;
+  transition:all .35s var(--ease);
+}
+.navbar.scrolled{
+  background:rgba(232,236,226,0.2);
+  backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  box-shadow:0 4px 24px rgba(54,48,84,.06);
+  border-color:rgba(200,206,194,0.4);
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{height:clamp(36px,4.5vw,60px);width:auto;display:block;margin-left:6px;}
+.nav-links{display:flex;gap:28px;align-items:center;}
+.nav-links a{
+  font-size:.84rem;font-weight:700;color:var(--charcoal);
+  position:relative;padding-bottom:4px;transition:color .3s var(--ease);
+}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:2px;background:var(--sage);transition:width .3s var(--ease);}
+.nav-links a:hover::after{width:100%;}
+.navbar.scrolled .nav-links a{color:var(--charcoal);}
+.nav-cta{display:flex;align-items:center;gap:14px;}
+.nav-toggle{display:none;flex-direction:column;gap:5px;width:24px;cursor:pointer;}
+.nav-toggle span{height:2px;background:var(--charcoal);border-radius:2px;}
+.mobile-panel{
+  display:none;
+  position:fixed;top:0;right:0;height:100vh;width:78%;max-width:320px;
+  background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(15px);
+  z-index:1100;padding:100px 32px 40px;
+  transform:translateX(100%);transition:transform .4s var(--ease);
+  box-shadow:-4px 0 30px rgba(54,48,84,.1);
+}
+.mobile-panel.open{transform:translateX(0);}
+.mobile-panel a{display:block;color:var(--charcoal);padding:14px 0;border-bottom:1px solid var(--grid);font-family:var(--font-sans);font-weight:700;font-size:.9rem;}
+.mobile-close{position:absolute;top:32px;right:32px;color:var(--charcoal);font-size:1.8rem;cursor:pointer;}
+
+/* ============ HERO ============ */
+.hero{
+  min-height:100vh;
+  background:var(--mint);
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.hero::before,.hero::after{
+  content:'';position:absolute;border-radius:50%;filter:blur(60px);z-index:0;
+  animation:blobFloat 22s ease-in-out infinite;pointer-events:none;
+}
+.hero::before{
+  width:min(800px,85vw);height:min(800px,85vw);
+  background:rgba(126,158,93,0.35);top:-12%;right:-8%;animation-delay:0s;
+}
+.hero::after{
+  width:min(600px,70vw);height:min(600px,70vw);
+  background:rgba(168,197,144,0.3);bottom:-12%;left:-8%;animation-delay:-9s;
+}
+@keyframes blobFloat{
+  0%,100%{transform:translate(0,0) scale(1);}
+  25%{transform:translate(50px,-40px) scale(1.1);}
+  50%{transform:translate(-30px,30px) scale(0.9);}
+  75%{transform:translate(40px,40px) scale(1.05);}
+}
+
+.hero-inner{position:relative;z-index:2;text-align:center;width:100%;padding:80px 24px 50px;min-height:100vh;display:flex;flex-direction:column;align-items:center;}
+.hero-logo-wrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;}
+.hero-logo-img{width:clamp(600px,85vw,2000px);display:block;animation:fadeInUp .5s var(--ease) both;}
+.hero-tagline{
+  font-family:var(--font-glacial);
+  font-weight:700;
+  font-size:clamp(1.5rem,3.2vw,2.8rem);
+  color:var(--navy);
+  margin:24px 0 28px;
+  animation:fadeInUp .5s .1s var(--ease) both;
+  letter-spacing:.06em;
+  flex-shrink:0;
+}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;animation:fadeInUp .5s .15s var(--ease) both;flex-shrink:0;margin-top:20px;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.btn{
+  font-family:var(--font-sans);
+  font-weight:600;
+  font-size:.9rem;
+  padding:14px 28px;
+  border-radius:100px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:all .3s var(--ease);
+}
+.btn-primary{background:var(--sage);color:#fff;}
+.btn-primary:hover{background:var(--moss);transform:translateY(-2px);}
+.btn-outline{border:1.5px solid var(--sage);color:var(--sage);background:transparent;}
+.btn-outline:hover{background:var(--sage);color:#fff;transform:translateY(-2px);}
+.btn-3d{background:var(--sage);color:#fff;box-shadow:0 4px 0 #5a7a3e,0 6px 16px rgba(126,158,93,.25);transform:translateY(0);transition:all .12s var(--ease);}
+.btn-3d:hover{background:var(--moss);transform:translateY(-2px);box-shadow:0 6px 0 #5a7a3e,0 10px 24px rgba(126,158,93,.35);}
+.btn-3d:active{transform:translateY(4px);box-shadow:0 0 0 #5a7a3e,0 2px 8px rgba(126,158,93,.2);}
+.btn-outline-3d{border:1.5px solid var(--sage);color:var(--sage);background:transparent;box-shadow:0 4px 0 rgba(126,158,93,.25),0 6px 16px rgba(126,158,93,.1);transform:translateY(0);transition:all .12s var(--ease);}
+.btn-outline-3d:hover{background:var(--sage);color:#fff;transform:translateY(-2px);box-shadow:0 6px 0 rgba(126,158,93,.35),0 10px 24px rgba(126,158,93,.2);}
+.btn-outline-3d:active{transform:translateY(4px);box-shadow:0 0 0 transparent,0 2px 8px rgba(126,158,93,.08);}
+.scroll-cue{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  z-index:2;color:#8a8a80;display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;
+}
+.scroll-cue .line{width:1px;height:32px;background:linear-gradient(var(--grid),transparent);animation:scrollLine 1.8s infinite;}
+@keyframes scrollLine{0%{transform:scaleY(0);transform-origin:top;}50%{transform:scaleY(1);transform-origin:top;}51%{transform-origin:bottom;}100%{transform:scaleY(0);transform-origin:bottom;}}
+
+/* ============ PROBLEM / SOLUTION ============ */
+#problem-solution{background:var(--white);}
+.transform-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:20px;overflow:hidden;box-shadow:0 6px 24px rgba(54,48,84,.05);}
+.transform-col{padding:36px 32px;}
+.transform-col.before{background:#f3f1ee;}
+.transform-col.after{background:var(--mint);}
+.transform-col h3{font-family:var(--font-sans);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#9a9a90;margin-bottom:24px;font-weight:600;}
+.transform-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-top:1px solid rgba(200,206,194,.35);}
+.transform-item:first-child{border-top:none;}
+.transform-item .icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.7rem;font-weight:700;margin-top:1px;}
+.transform-item .icon.problem{background:rgba(181,68,58,.1);color:#b5443a;}
+.transform-item .icon.solved{background:rgba(126,158,93,.15);color:var(--moss);}
+.transform-item h4{font-size:.88rem;margin-bottom:2px;color:var(--charcoal);font-family:var(--font-sans);}
+.transform-item p{font-size:.78rem;color:#6a6a64;line-height:1.5;}
+
+/* ============ HOW IT WORKS ============ */
+#how-it-works{background:var(--mint);}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.step-card{
+  background:var(--white);border-radius:16px;overflow:hidden;
+  box-shadow:0 6px 24px rgba(54,48,84,.06);border:1px solid var(--grid);
+  display:flex;flex-direction:column;
+}
+.step-header{
+  padding:20px 24px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--grid);
+}
+.step-num{
+  width:32px;height:32px;border-radius:10px;background:rgba(126,158,93,.12);color:var(--moss);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-sans);font-weight:700;font-size:.8rem;flex-shrink:0;
+}
+.step-header h3{font-family:var(--font-sans);font-size:.95rem;color:var(--charcoal);}
+.mockup-body{
+  padding:16px 20px 20px;flex:1;display:flex;flex-direction:column;gap:8px;
+  background:#fafbf8;
+}
+
+/* Step 1 - Chat mockup */
+.msg-bubble{max-width:88%;padding:8px 12px;border-radius:12px;font-size:.74rem;line-height:1.5;}
+.msg-bubble.bot{background:var(--white);border:1px solid var(--grid);align-self:flex-start;border-bottom-left-radius:3px;}
+.msg-bubble.user{background:var(--sage);color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+.chat-input-line{display:flex;gap:6px;margin-top:6px;}
+.chat-input-line input{flex:1;padding:6px 10px;border-radius:100px;border:1px solid var(--grid);font-size:.7rem;outline:none;font-family:var(--font-body);background:var(--white);}
+.chat-input-line button{width:26px;height:26px;border-radius:50%;background:var(--sage);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* Step 2 - Analysis mockup */
+.analysis-row{display:flex;align-items:center;gap:8px;font-size:.72rem;color:#5a5a54;padding:5px 8px;border-radius:6px;background:var(--white);border:1px solid var(--grid);}
+.analysis-row .check{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.5rem;color:#fff;}
+.analysis-row .check.done{background:var(--moss);}
+.analysis-row .check.proc{background:var(--sage);animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.analysis-result{margin-top:4px;padding:10px 12px;border-radius:8px;border-left:3px solid var(--sage);background:var(--white);font-size:.72rem;line-height:1.5;color:var(--charcoal);}
+
+/* Step 3 - Response mockup */
+.resp-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.resp-badge.critical{background:#f8dede;color:#b5443a;}
+.resp-id{font-family:monospace;font-size:.7rem;color:#8a8a80;}
+.resp-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.resp-action{padding:5px 12px;border-radius:6px;font-size:.65rem;font-weight:600;cursor:default;}
+.resp-action.primary{background:var(--sage);color:#fff;}
+.resp-action.outline{border:1px solid var(--grid);color:var(--charcoal);background:var(--white);}
+.resp-status{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;font-size:.68rem;margin-top:4px;}
+.resp-status.sent{background:rgba(126,158,93,.1);color:var(--moss);}
+
+.step-desc{text-align:center;padding:14px 20px 20px;border-top:1px solid var(--grid);font-size:.82rem;color:#5a5a54;line-height:1.5;}
+
+/* ============ BROWSER FRAME ============ */
+.browser-frame{
+  background:#fff;border-radius:16px;overflow:hidden;
+  box-shadow:0 20px 50px rgba(54,48,84,.12);border:1px solid var(--grid);
+}
+.browser-bar{
+  background:#eef0ea;padding:12px 16px;display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--grid);
+}
+.browser-dot{width:10px;height:10px;border-radius:50%;background:var(--grid);}
+.browser-url{
+  margin-left:12px;background:#fff;border-radius:6px;padding:5px 12px;font-size:.68rem;
+  color:#8a8a80;flex:1;border:1px solid var(--grid);font-family:monospace;
+}
+.browser-content{padding:22px;background:#fbfbf8;flex:1;}
+.browser-frame{display:flex;flex-direction:column;}
+
+/* ============ DASHBOARD ============ */
+#dashboard{background:var(--white);}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+.mock-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.mock-title h4{font-family:var(--font-sans);font-size:1rem;color:var(--navy);}
+.mock-stats{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.mock-stat{
+  background:#fff;border:1px solid var(--grid);border-radius:10px;padding:10px 14px;flex:1;min-width:80px;
+}
+.mock-stat .num{font-family:var(--font-sans);font-weight:800;font-size:1.2rem;color:var(--charcoal);}
+.mock-stat .lbl{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:#8a8a80;}
+.mock-row{
+  display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--grid);
+  border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:.78rem;
+}
+.mock-row .id{font-family:monospace;color:#8a8a80;width:95px;flex-shrink:0;font-size:.73rem;}
+.mock-row .type{flex:1;color:var(--charcoal);}
+.badge{
+  padding:3px 10px;border-radius:100px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+}
+.badge.critical{background:#f8dede;color:#b5443a;}
+.badge.high{background:#fbe8d0;color:#b57a2c;}
+.badge.medium{background:#eef0d0;color:#8a8a2c;}
+.badge.low{background:#e4efe0;color:var(--moss);}
+.badge.resolved{background:#e4efe0;color:var(--moss);}
+.detail-card{background:#fff;border:1px solid var(--grid);border-radius:10px;padding:16px;margin-bottom:10px;}
+.detail-card h5{font-family:var(--font-sans);font-size:.73rem;text-transform:uppercase;letter-spacing:.06em;color:#8a8a80;margin-bottom:6px;}
+.detail-card p{font-size:.83rem;color:var(--charcoal);line-height:1.6;}
+.ai-summary{
+  border-left:3px solid var(--sage);padding-left:12px;font-style:italic;color:#4a4a44;font-size:.84rem;
+}
+.action-tags{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.action-tags span{
+  background:var(--mint);color:var(--navy);font-size:.7rem;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--grid);
+}
+
+/* ============ CHAT ============ */
+#chat-preview{background:var(--mint);}
+.chat-window .browser-content{padding:0;display:flex;flex-direction:column;min-height:380px;}
+.chat-header{padding:14px 18px;border-bottom:1px solid var(--grid);display:flex;align-items:center;gap:10px;background:#fff;}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.75rem;}
+.chat-header-info h4{font-size:.85rem;color:var(--charcoal);}
+.chat-header-info span{font-size:.7rem;color:#8a8a80;}
+.chat-messages{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1;background:#f8f9f6;}
+.chat-msg{max-width:80%;padding:11px 15px;border-radius:14px;font-size:.85rem;line-height:1.6;}
+.chat-msg.bot{background:var(--white);border:1px solid var(--grid);align-self:flex-start;border-bottom-left-radius:4px;}
+.chat-msg.user{background:var(--sage);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.chat-choices{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px;}
+.chat-choice{padding:7px 14px;border-radius:100px;border:1.5px solid var(--sage);color:var(--sage);font-size:.78rem;font-weight:600;background:rgba(126,158,93,.06);}
+.chat-input{display:flex;padding:12px 16px;border-top:1px solid var(--grid);background:#fff;gap:10px;}
+.chat-input input{flex:1;padding:9px 14px;border-radius:100px;border:1px solid var(--grid);font-size:.83rem;outline:none;font-family:var(--font-body);background:#f5f6f2;}
+.chat-input button{width:36px;height:36px;border-radius:50%;background:var(--sage);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.chat-input button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ============ OPEN SOURCE BANNER ============ */
+#open-source{background:var(--white);padding:60px 0;}
+.os-card{background:var(--mint);border-radius:20px;padding:48px 40px;text-align:center;max-width:700px;margin:0 auto;border:1px solid var(--grid);}
+.os-card h3{font-family:var(--font-sans);font-size:1.25rem;margin-bottom:10px;color:var(--charcoal);}
+.os-card p{font-size:.9rem;color:#5a5a54;line-height:1.7;margin-bottom:22px;}
+
+/* ============ FOOTER ============ */
+footer{background:var(--charcoal);padding:48px 0 36px;}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;margin-bottom:36px;}
+.footer-brand-col h4{font-family:var(--font-logo);color:#fff;font-weight:700;font-size:1.05rem;margin-bottom:8px;letter-spacing:-.01em;}
+.footer-brand-col p{color:rgba(255,255,255,.45);font-size:.8rem;line-height:1.7;max-width:320px;}
+.footer-col h5{color:rgba(255,255,255,.6);font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-family:var(--font-sans);}
+.footer-col a{display:block;color:rgba(255,255,255,.4);font-size:.8rem;padding:4px 0;transition:color .3s var(--ease);}
+.footer-col a:hover{color:var(--sage);}
+.footer-divider{height:1px;background:rgba(255,255,255,.08);margin-bottom:24px;}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.footer-bottom p{color:rgba(255,255,255,.3);font-size:.72rem;}
+.footer-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-size:.72rem;}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:1024px){
+  .transform-grid{grid-template-columns:1fr;}
+  .steps-grid{grid-template-columns:repeat(3,1fr);gap:16px;}
+  .dash-grid{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:30px;}
+}
+@media(max-width:768px){
+  .nav-links,.nav-cta .btn-outline{display:none;}
+  .nav-toggle{display:flex;}
+  .mobile-panel{display:block;}
+  section{padding:64px 0;}
+  .steps-grid{grid-template-columns:1fr;max-width:400px;margin:0 auto;}
+  .step-card{max-width:100%;}
+  .transform-col{padding:28px 24px;}
+  .browser-content{padding:16px;}
+  .mock-stat{min-width:65px;padding:8px 10px;}
+  .mock-row{font-size:.73rem;padding:8px 10px;}
+  .mock-row .id{width:70px;}
+  .chat-window .browser-content{min-height:300px;}
+  .nav-logo{height:clamp(32px,7vw,48px);}
+  .hero-logo-img{width:clamp(400px,75vw,800px);}
+  .footer-grid{grid-template-columns:1fr;text-align:center;}
+  .footer-brand-col p{margin:0 auto;}
+  .footer-bottom{flex-direction:column;text-align:center;}
+}
+@media(max-width:480px){
+  section{padding:48px 0;}
+  .container{width:90%;}
+  .hero-logo-img{width:clamp(300px,80vw,550px);}
+  .hero-tagline{font-size:1.15rem;letter-spacing:.04em;}
+  .hero-ctas{gap:10px;flex-direction:column;align-items:center;}
+  .section-head h2{font-size:1.25rem;margin-bottom:10px;}
+  .step-card{padding:0;}
+  .transform-col{padding:24px 18px;}
+  .chat-msg{max-width:92%;font-size:.82rem;padding:9px 12px;}
+  .chat-choice{padding:6px 12px;font-size:.74rem;}
+  .nav-logo{height:30px;}
+  .os-card{padding:32px 24px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="navbar" id="navbar">
+  <div class="container nav-inner">
+    <a href="#hero"><img src="Logo.png" alt="ALTREON" class="nav-logo"></a>
+    <div class="nav-links">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#chat-preview">Chat</a>
+      <a href="#open-source">Open Source</a>
+    </div>
+    <div class="nav-cta">
+      <a href="https://github.com/abdallah-mft/Altreon" target="_blank" rel="noopener" class="btn btn-outline" style="padding:8px 18px;font-size:.76rem;border-radius:100px;font-weight:600;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg> GitHub</a>
+    </div>
+    <div class="nav-toggle" id="navToggle"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+
+<div class="mobile-panel" id="mobilePanel">
+  <div class="mobile-close" id="mobileClose">&times;</div>
+  <a href="#how-it-works">How It Works</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#chat-preview">Chat</a>
+  <a href="#open-source">Open Source</a>
+  <a href="https://github.com/abdallah-mft/Altreon" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="hero-logo-wrap"><img src="Logo.png" alt="ALTREON" class="hero-logo-img"></div>
+    <p class="hero-tagline">Rapid Cyber Triage &amp; SOAR Platform</p>
+    <div class="hero-ctas">
+      <a href="#dashboard" class="btn btn-3d"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> See the Dashboard</a>
+      <a href="https://github.com/abdallah-mft/Altreon" target="_blank" rel="noopener" class="btn btn-outline-3d"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg> View on GitHub</a>
+    </div>
+  </div>
+  <div class="scroll-cue"><span>Scroll</span><span class="line"></span></div>
+</section>
+
+<!-- ============ PROBLEM / SOLUTION ============ -->
+<section id="problem-solution">
+  <div class="container">
+    <div class="section-head reveal">
+      <span style="display:inline-block;font-family:var(--font-sans);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);font-weight:700;margin-bottom:10px;">Why Altreon</span>
+      <h2>Before vs. After</h2>
+      <p>Three gaps that cost time - and how ALTREON closes each one.</p>
+    </div>
+    <div class="transform-grid">
+      <div class="transform-col before reveal">
+        <h3>Without Altreon</h3>
+        <div class="transform-item">
+          <span class="icon problem"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+          <div><h4>Silent fear</h4><p>Employees see threats but stay quiet. No report, no action.</p></div>
+        </div>
+        <div class="transform-item">
+          <span class="icon problem"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+          <div><h4>Alert chaos</h4><p>IT teams drown in noise. Real threats buried in the feed.</p></div>
+        </div>
+        <div class="transform-item">
+          <span class="icon problem"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+          <div><h4>Blind silos</h4><p>Human reports and system alerts never meet - until it's too late.</p></div>
+        </div>
+      </div>
+      <div class="transform-col after reveal reveal-delay-1">
+        <h3>With Altreon</h3>
+        <div class="transform-item">
+          <span class="icon solved"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 8 10 16 7 13"/></svg></span>
+          <div><h4>30s chat report</h4><p>Guided conversation. No forms, no jargon, no fear.</p></div>
+        </div>
+        <div class="transform-item">
+          <span class="icon solved"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 8 10 16 7 13"/></svg></span>
+          <div><h4>AI correlation</h4><p>Cross-references everything. Real threats pop to the top.</p></div>
+        </div>
+        <div class="transform-item">
+          <span class="icon solved"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 8 10 16 7 13"/></svg></span>
+          <div><h4>Instant alert</h4><p>Critical incidents trigger SMS + clear actions in seconds.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-head reveal">
+      <span style="display:inline-block;font-family:var(--font-sans);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);font-weight:700;margin-bottom:10px;">How It Works</span>
+      <h2 style="font-family:var(--font-antic);">Three simple steps</h2>
+      <p>From the moment someone reports an issue to the moment your team takes action.</p>
+    </div>
+    <div class="steps-grid">
+      <!-- Step 1: Report -->
+      <div class="step-card reveal">
+        <div class="step-header">
+          <span class="step-num">1</span>
+          <h3>Report - Employee Chat</h3>
+        </div>
+        <div class="mockup-body" id="stepChat">
+          <div class="msg-bubble bot msg-hidden" style="max-width:75%;">
+            Hi, I'm here to help. What happened?
+          </div>
+          <div class="msg-bubble user msg-hidden" style="max-width:80%;align-self:flex-end;">
+            Got an email asking me to click a link and verify my password.
+          </div>
+          <div class="msg-bubble bot msg-hidden" style="max-width:70%;">
+            Thanks. Did you click the link or enter any info?
+          </div>
+          <div class="msg-hidden" style="display:flex;gap:5px;flex-wrap:wrap;margin:2px 0;">
+            <span style="padding:4px 10px;border-radius:100px;border:1.5px solid var(--sage);color:var(--sage);font-size:.65rem;font-weight:600;background:rgba(126,158,93,.06);">No, I deleted it</span>
+            <span style="padding:4px 10px;border-radius:100px;border:1.5px solid var(--sage);color:var(--sage);font-size:.65rem;font-weight:600;background:rgba(126,158,93,.06);">Yes, I clicked</span>
+          </div>
+          <div class="chat-input-line msg-hidden">
+            <input type="text" placeholder="Type a message..." disabled>
+            <button><svg viewBox="0 0 24 24" style="width:12px;height:12px;"><line x1="22" y1="2" x2="11" y2="13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
+          </div>
+        </div>
+        <div class="step-desc">Employees report concerns through a natural chat conversation - no forms, no technical knowledge required.</div>
+      </div>
+
+      <!-- Step 2: Analyze -->
+      <div class="step-card reveal reveal-delay-1">
+        <div class="step-header">
+          <span class="step-num">2</span>
+          <h3>Analyze - AI Correlation</h3>
+        </div>
+        <div class="mockup-body" id="stepAnalyze">
+          <div class="analysis-row msg-hidden">
+            <span class="check done" style="font-size:.45rem;">&#10003;</span>
+            Cross-referencing employee report
+          </div>
+          <div class="analysis-row msg-hidden">
+            <span class="check done" style="font-size:.45rem;">&#10003;</span>
+            Checking past incidents (3 found)
+          </div>
+          <div class="analysis-row msg-hidden">
+            <span class="check proc">&#9679;</span>
+            Matching system alert feeds
+          </div>
+          <div class="analysis-row msg-hidden">
+            <span class="check">&#9679;</span>
+            Scoring severity index
+          </div>
+          <div class="analysis-result msg-hidden">
+            <strong style="color:var(--moss);">87% match</strong> - Related to INC-4502 (phishing) from same source IP. Severity: <strong style="color:#b5443a;">Critical</strong>
+          </div>
+        </div>
+        <div class="step-desc">The AI engine cross-references human reports with system alerts and past incidents to identify real threats.</div>
+      </div>
+
+      <!-- Step 3: Respond -->
+      <div class="step-card reveal reveal-delay-2">
+        <div class="step-header">
+          <span class="step-num">3</span>
+          <h3>Respond - Incident View</h3>
+        </div>
+        <div class="mockup-body" id="stepRespond">
+          <div class="msg-hidden" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span class="resp-id">INC-4521</span>
+            <span class="resp-badge critical">Critical</span>
+          </div>
+          <div class="msg-hidden" style="font-size:.8rem;font-weight:600;margin-bottom:6px;color:var(--charcoal);">Credential Harvesting Campaign</div>
+          <div class="resp-actions msg-hidden">
+            <span class="resp-action primary">Isolate Endpoint</span>
+            <span class="resp-action primary">Reset Credentials</span>
+            <span class="resp-action outline">Notify Team</span>
+          </div>
+          <div class="msg-hidden" style="font-size:.68rem;color:#8a8a80;margin-top:6px;font-family:monospace;">Assigned to J. Smith &middot; Security Lead</div>
+          <div class="resp-status sent msg-hidden">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+            SMS alert dispatched to on-call admin
+          </div>
+        </div>
+        <div class="step-desc">Teams get clear, prioritized incidents with recommended actions and instant alerts for critical threats.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="dashboard">
+  <div class="container">
+    <div class="section-head reveal">
+      <span style="display:inline-block;font-family:var(--font-sans);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);font-weight:700;margin-bottom:10px;">Product Preview</span>
+      <h2>Live monitoring, real clarity</h2>
+      <p>See exactly what your team sees - a clean dashboard that turns noise into action.</p>
+    </div>
+    <div class="dash-grid" id="dashContent">
+      <div class="browser-frame reveal">
+        <div class="browser-bar">
+          <span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span>
+          <div class="browser-url">app.altreon.io/monitoring</div>
+        </div>
+        <div class="browser-content">
+          <div class="mock-title"><h4>Live Monitoring</h4><span class="badge low">System Nominal</span></div>
+          <div class="mock-stats">
+            <div class="mock-stat msg-hidden"><div class="num">12</div><div class="lbl">Open</div></div>
+            <div class="mock-stat msg-hidden"><div class="num">3</div><div class="lbl">Critical</div></div>
+            <div class="mock-stat msg-hidden"><div class="num">4m</div><div class="lbl">Avg Response</div></div>
+            <div class="mock-stat msg-hidden"><div class="num">92%</div><div class="lbl">Containment</div></div>
+          </div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4521</span><span class="type">Credential Harvesting Campaign</span><span class="badge critical">Critical</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4519</span><span class="type">Suspicious Login Attempt</span><span class="badge high">High</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4514</span><span class="type">Malware Signature Detected</span><span class="badge medium">Medium</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4508</span><span class="type">Unusual Outbound Traffic</span><span class="badge low">Low</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4502</span><span class="type">Phishing Link Reported</span><span class="badge resolved">Resolved</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4498</span><span class="type">Data Exfiltration Attempt</span><span class="badge high">High</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4495</span><span class="type">Ransomware Detected</span><span class="badge critical">Critical</span></div>
+          <div class="mock-row msg-hidden"><span class="id">INC-4490</span><span class="type">Policy Violation</span><span class="badge low">Low</span></div>
+        </div>
+      </div>
+      <div class="browser-frame reveal reveal-delay-1">
+        <div class="browser-bar">
+          <span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span>
+          <div class="browser-url">app.altreon.io/incident/INC-4521</div>
+        </div>
+        <div class="browser-content">
+          <div class="mock-title"><h4>Incident Detail</h4><span class="badge critical">Critical</span></div>
+          <div class="detail-card msg-hidden">
+            <h5>AI Summary</h5>
+            <p class="ai-summary">"Employee reported a suspicious login email. Correlated with two prior alerts from the same source IP in the last 24 hours - consistent with a targeted credential harvesting campaign."</p>
+          </div>
+          <div class="detail-card msg-hidden">
+            <h5>Assigned To</h5>
+            <p><strong>J. Smith</strong> - Security Lead &middot; SMS alert dispatched</p>
+          </div>
+          <div class="detail-card msg-hidden">
+            <h5>Actions</h5>
+            <div class="action-tags"><span>Isolate Endpoint</span><span>Reset Credentials</span><span>Notify Team</span></div>
+          </div>
+          <div class="detail-card msg-hidden">
+            <h5>Timeline</h5>
+            <p style="font-size:.76rem;color:#8a8a80;font-family:monospace;line-height:1.8;">
+              09:23 - Report submitted by employee<br>
+              09:24 - AI correlation complete, escalated to Critical<br>
+              09:24 - SMS alert sent to on-call admin<br>
+              09:31 - Endpoint isolated by J. Smith
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHAT ============ -->
+<section id="chat-preview">
+  <div class="container">
+    <div class="section-head reveal">
+      <span style="display:inline-block;font-family:var(--font-sans);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);font-weight:700;margin-bottom:10px;">Employee Experience</span>
+      <h2>Reporting feels like a conversation</h2>
+      <p>No forms, no portals - just a simple chat that guides employees through what happened.</p>
+    </div>
+    <div class="browser-frame chat-window reveal" style="max-width:580px;margin:0 auto;">
+      <div class="browser-bar">
+        <span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span>
+        <div class="browser-url">app.altreon.io/report</div>
+      </div>
+      <div class="browser-content">
+        <div class="chat-header">
+          <div class="chat-avatar">A</div>
+          <div class="chat-header-info">
+            <h4>ALTREON Security Assistant</h4>
+            <span>Online</span>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMsgs">
+          <div class="chat-msg bot msg-hidden">Hi, I'm here to help you report a security concern. What happened?</div>
+          <div class="chat-msg user msg-hidden">I got an email asking me to click a link and verify my password. The link looked like our company page but the URL was wrong.</div>
+          <div class="chat-msg bot msg-hidden">Thanks for letting me know. When did you notice this email?</div>
+          <div class="chat-choices msg-hidden">
+            <span class="chat-choice">Just now</span>
+            <span class="chat-choice">A few hours ago</span>
+            <span class="chat-choice">Yesterday</span>
+          </div>
+          <div class="chat-msg bot msg-hidden">Did you click the link or enter any information?</div>
+          <div class="chat-choices msg-hidden">
+            <span class="chat-choice">Yes, I clicked</span>
+            <span class="chat-choice">No, I deleted it</span>
+            <span class="chat-choice">Not sure</span>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" placeholder="Type your message..." value="I clicked but didn't enter anything" disabled>
+          <button><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ OPEN SOURCE ============ -->
+<section id="open-source">
+  <div class="container">
+    <div class="os-card reveal">
+      <h3>Built in the open</h3>
+      <p>ALTREON is fully open source under the MIT license. Built with Llama 3, Gemini, and Groq - because security tools should be accessible to every team, not just enterprises with six-figure budgets.</p>
+      <a href="https://github.com/abdallah-mft/Altreon" target="_blank" rel="noopener" class="btn btn-3d"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg> Explore on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand-col">
+        <h4>ALTREON</h4>
+        <p>AI-powered cybersecurity triage and SOAR platform. Rapid threat detection, smart correlation, and instant response - built for teams that need to move fast.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Product</h5>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#chat-preview">Chat</a>
+      </div>
+      <div class="footer-col">
+        <h5>Community</h5>
+        <a href="https://github.com/abdallah-mft/Altreon" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/abdallah-mft/Altreon/issues" target="_blank" rel="noopener">Report an Issue</a>
+        <a href="https://github.com/abdallah-mft/Altreon/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+      </div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 ALTREON. Built with open source.</p>
+      <span class="footer-badge">Open Source &middot; MIT</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 40);
+});
+
+const navToggle = document.getElementById('navToggle');
+const mobilePanel = document.getElementById('mobilePanel');
+const mobileClose = document.getElementById('mobileClose');
+navToggle.addEventListener('click', () => mobilePanel.classList.add('open'));
+mobileClose.addEventListener('click', () => mobilePanel.classList.remove('open'));
+mobilePanel.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobilePanel.classList.remove('open')));
+
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+  });
+}, { threshold: 0.15 });
+revealEls.forEach(el => observer.observe(el));
+
+// Sequential reveal for step content + dash + chat
+['stepChat','stepAnalyze','stepRespond','dashContent','chatMsgs'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const items = el.querySelectorAll('.msg-hidden');
+        items.forEach((item, i) => {
+          setTimeout(() => item.classList.add('visible'), 150 + i * 300);
+        });
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  obs.observe(el);
+});
+
+</script>
+</body>
+</html>
